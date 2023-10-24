@@ -38,7 +38,7 @@ C2matrix_3x3 = 'B1,B2,B3,C3,C2,C1,D1,D3'.split(',')
 
 # HIGH PURITY energy scan #
 dict_C3_energy   = {'100' : [14918], '150' : [14943,14934], '197': [14951], '243': [14820,14821]}
-HP_trees_path = '/eos/cms/store/group/dpg_ecal/comm_ecal/upgrade/testbeam/ECALTB_H4_Oct2021/HighPurity/ntuples_fitVFEs/'
+HP_trees_path = '/eos/cms/store/group/dpg_ecal/comm_ecal/upgrade/testbeam/ECALTB_H4_Oct2021/HighPurity/ntuples_fitVFEs_fixes/'
 HP_dict_energy_Nbins   = {'100': 400, '150': 400, '197' :200, '243' : 300}
 HP_crystal = 'C3'
 C3matrix_3x3 = 'B4,B2,B3,C3,C2,C4,D4,D2,D3'.split(',') 
