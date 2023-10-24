@@ -22,25 +22,25 @@ from uncertainties import unumpy
 from uncertainties import ufloat
 
 ROOT.gROOT.SetBatch(True)
+ROOT.gStyle.SetOptStat(0)
+ROOT.gStyle.SetLineWidth(2)
+ROOT.gStyle.SetPadTickX(1)
+ROOT.gStyle.SetPadTickY(1)
+import locale
+locale.setlocale(locale.LC_ALL, 'en_US')
 
 
-dict_C2_energy = { '25' : [15183] ,'50' : [15145, 15146], '75' : [15199], '100' : [15153], '125' : [15190], '150' : [15158]}
-dict_energy_Chi2max = {'25' : 200,   '50' : 1000,  '75': 2300, '100': 2800, '125': 4000, '150': 4300}
-dict_energy_Amin    = {'25' : 400,   '50' : 800,   '75': 1300, '100': 1600, '125': 2000, '150': 2000}
-dict_energy_Amax    = {'25' : 700,   '50' : 1500,  '75': 2100, '100': 2800, '125': 3400, '150': 4500}
+dict_C2_energy = { '25' : [15183] ,'50' : [15145, 15146], '75' : [15199], '100' : [15153], '125' : [15190], '150' : [15158]}#, '175' : [15208], '200' : [15175]}
+dict_C3_energy   = {'50' : [14907,14914,14937,14938], '100' : [14918], '150' : [14943,14934], '200': [14951], '250': [14820,14821]}
 
-
-dict_energy_Cx      = {'25' : 2.5,    '50' : 2.5,    '75':  0.,   '100':  0.,  '125':  0., '150': 2.5}
-dict_energy_Cy      = {'25' : -3.,    '50' : -3.,    '75': -4.,   '100': -2.5, '125': -3., '150': -2.5}
-
-dict_energy_Nbins   = {'25' : 800,   '50' : 500,   '75': 400,  '100': 300, '125': 300, '150': 250}
+dict_energy_Nbins   = {'25' : 1000,   '50' : 800,   '75': 500,  '100': 400, '125': 300, '150': 300, '175' : 300, '200' : 300, '250' :300}
 plot_folder = '/eos/user/c/cbasile/www/ECAL_TB2021/Linearity/FitAmpl'
-outstr = 'poster'
+outstr = 'Etempl_fix'
 trees_path = '/eos/cms/store/group/dpg_ecal/comm_ecal/upgrade/testbeam/ECALTB_H4_Oct2021/LowPurity/ntuples_fit'
 
 
 c = ROOT.TCanvas("c","c",2000,1000)
-c.Divide(3,2)
+c.Divide(4,2)
 canvas_num=0
 C2_results = []
 crystal='C2'
@@ -52,6 +52,7 @@ print(energies)
 for energy in energies :
         c.cd(canvas_num+1) 
         
+        E = float(energy)
         runs = dict_C2_energy[energy]
         tree = ROOT.TChain("h4")
         for run in runs:
@@ -59,11 +60,19 @@ for energy in energies :
         
         myCB = CB.CBfunction(tree)
         myCB.set_crystal(crystal)
-        myCB.xaxis_scale = 0.3
-        myCB.a_initial = 0.5
         myCB.set_energy(energy)
-        myCB.set_position(dict_energy_Cx[energy], dict_energy_Cy[energy], 4)
-
+        myCB.xaxis_scale = 0.15
+        if(E == 75): myCB.xaxis_scale = 0.25
+        myCB.window = 80
+        myCB.a_min = 0.01; myCB.a_max = 5.;myCB.a_initial = 0.5
+        myCB.a2_min = 1; myCB.a2_max = 10.;myCB.a2_initial = 3 
+        myCB.n_min = 1; myCB.n_max = 200; myCB.n_initial = 15
+        myCB.n2_min = 80; myCB.n2_max = 200; myCB.n2_initial =100 
+        
+        #if(E == 75): 
+        #    myCB.n_min = 1; myCB.n_max = myCB.n_min;
+        #myCB.set_position(dict_energy_Cx[energy], dict_energy_Cy[energy], 4)
+        if (E>100): myCB.doubleSidedCB = True
         myCB.nbins=dict_energy_Nbins[energy]
         myCB.prepare_histogram()
         if (myCB.doubleSidedCB):
@@ -75,8 +84,10 @@ for energy in energies :
         tmp_dict = {}
         tmp_dict[energy] = myCB.fitResults()
         C2_results.append(tmp_dict)
-        
+        if (E == 100) : myCB.plot_containment(plot_folder, outstr) 
         canvas_num+=1
+
+############## SAVE RESULTS ##############
 
 c.Draw()
 c.SaveAs('%s/C2_fits_%s.pdf'%(plot_folder,outstr))
@@ -84,6 +95,10 @@ c.SaveAs('%s/C2_fits_%s.png'%(plot_folder,outstr))
 
 with open("results/C2results_%s.json"%outstr, "w") as fp:
     json.dump(C2_results,fp) 
+print(' [OUT] fit parameters saved in results/C2results_%s.json'%(outstr))
+
+
+exit()
 
 energies_float = []
 means_C2 = []
@@ -105,7 +120,6 @@ means =  unumpy.umatrix(means_C2, means_C2_err)
 sigmas =  unumpy.umatrix(sigma_C2, sigma_C2_err)
 
 sigma_over_mean_C2 = sigmas/means
-
 
 
 ############## --------------- LINEARITY FIT --------------- ##############
