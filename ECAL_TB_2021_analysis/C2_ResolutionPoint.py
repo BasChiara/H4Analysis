@@ -11,6 +11,9 @@ import os
 
 import numpy as np
 
+import locale
+locale.setlocale(locale.LC_ALL, 'en_US')
+
 
 import sys
 sys.path.insert(0, 'utils/')
@@ -20,13 +23,17 @@ from uncertainties import unumpy
 from uncertainties import ufloat
 
 ROOT.gROOT.SetBatch(True)
+ROOT.gStyle.SetOptStat(0)
+ROOT.gStyle.SetLineWidth(2)
+ROOT.gStyle.SetPadTickX(1)
+ROOT.gStyle.SetPadTickY(1)
 
 
 dict_mode_run     = {'LP' : [15153] , 'HP' : [14982], 'LHP' : [14982]}
 dict_mode_Cx      = {'LP' :  0.,    'HP' :  2., 'LHP' : 2.}
 dict_mode_Cy      = {'LP' : -2.5,   'HP' : -2., 'LHP' : -2.}
 
-dict_mode_Nbins   = {'LP' : 300,   'HP' : 300, 'LHP' : 300}
+dict_mode_Nbins   = {'LP' : 500,   'HP' : 500, 'LHP' : 500}
 dict_mode_path    = {'LP' : '/eos/cms/store/group/dpg_ecal/comm_ecal/upgrade/testbeam/ECALTB_H4_Oct2021/LowPurity/ntuples_fit',   'HP' : '/eos/cms/store/group/dpg_ecal/comm_ecal/upgrade/testbeam/ECALTB_H4_Oct2021/HighPurity/ntuples_fitHP', 'LHP': '/eos/cms/store/group/dpg_ecal/comm_ecal/upgrade/testbeam/ECALTB_H4_Oct2021/HighPurity/ntuples_fitLP'}
 plot_folder = '/eos/user/c/cbasile/www/ECAL_TB2021/HighPurity/IntercalibScan/C2/'
 outstr = 'BeamModes'
@@ -56,10 +63,12 @@ for mode in modes :
         
         myCB = CB.CBfunction(tree)
         myCB.set_crystal(crystal)
-        myCB.xaxis_scale = 0.3
+        myCB.xaxis_scale = 0.2
         myCB.a_initial = 0.5
+        myCB.n_min = 1.; myCB.n_max = 20.; myCB.n_initial = 8
         myCB.set_energy(energy)
-        myCB.set_position(dict_mode_Cx[mode], dict_mode_Cy[mode], 4)
+        myCB.window = 80
+        #myCB.set_position(dict_mode_Cx[mode], dict_mode_Cy[mode], 4)
         myCB.nbins=dict_mode_Nbins[mode]
         myCB.prepare_histogram()
         if (myCB.doubleSidedCB):
@@ -121,23 +130,23 @@ gr_HLP.SetPointError(0,energy*0.005, ey[2])
 gr_HLP.SetMarkerStyle( 20 ); gr_HLP.SetLineColor(ROOT.kGreen); gr_HLP.SetMarkerColor(ROOT.kGreen)
 
 gr_LP.SetTitle('')
-gr_LP.GetYaxis().SetLabelSize(0.04); gr_LP.GetYaxis().SetRangeUser(0.018, 0.030); 
-gr_LP.GetXaxis().SetRangeUser(90,110);
+gr_LP.GetYaxis().SetLabelSize(0.04); gr_LP.GetYaxis().SetRangeUser(0.015, 0.030); 
+gr_LP.GetXaxis().SetLimits(98,102);
 gr_LP.GetYaxis().SetLabelSize(0.04)
-gr_LP.GetYaxis().SetTitleOffset(1.7)
+gr_LP.GetYaxis().SetTitleOffset(2.)
 gr_LP.GetYaxis().SetTitle( '#sigma(E)/E' )
 gr_LP.GetXaxis().SetTitle( 'E (GeV)' ); 
 gr_LP.Draw( 'AP' )
 gr_HP.Draw( 'P' )
 gr_HLP.Draw( 'P' )
-leg = ROOT.TLegend(0.55,0.65,0.8,0.9)
+leg = ROOT.TLegend(0.55,0.7,0.8,0.85)
 leg.SetFillStyle(-1)
 leg.SetBorderSize(0)
 leg.SetTextFont(42)
 leg.SetTextSize(0.03)
-leg.AddEntry(gr_LP,'LP-LP','P')
-leg.AddEntry(gr_HP,'HP-HP','P')
-leg.AddEntry(gr_HLP,'LP-HP','P')
+leg.AddEntry(gr_LP,'LP data - LP templ','P')
+leg.AddEntry(gr_HP,'HP data - HP templ','P')
+leg.AddEntry(gr_HLP,'HP data - LP templ','P')
 leg.Draw()
 
 c1.Draw()  
