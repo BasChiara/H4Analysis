@@ -36,6 +36,7 @@ parser.add_argument('-i', '--input', help = 'JSON file to read in input')
 parser.add_argument('-o', '--output', help = 'folder to save plots', default = '/eos/user/c/cbasile/www/ECAL_TB2021/Linearity/FitAmpl')
 parser.add_argument('--tag', default = 'C2')
 parser.add_argument('--crystal', default= 'C2 crystal')
+parser.add_argument('--gain_compare', action = 'store_true')
 
 args = parser.parse_args ()
 plot_folder = args.output
@@ -78,7 +79,7 @@ ECALtex = ROOT.TLatex()
 ECALtex.SetTextFont(42)
 ECALtex.SetTextAngle(0)
 ECALtex.SetTextColor(ROOT.kBlack)    
-ECALtex.SetTextSize(0.05)    
+ECALtex.SetTextSize(0.06)
 ECALtex.SetTextAlign(12)
 
 def linear_func(x, a, b):
@@ -121,10 +122,10 @@ lin_gr.GetYaxis().SetLabelSize(0.04);
 lin_gr.Draw('AP')
 fit_func.Draw("same")
 lin_gr.Draw('P')
-ECALtex.DrawLatex(21, 0.9*lin_gr.GetYaxis().GetXmax(), "#bf{ECAL} Test Beam 2021")
+ECALtex.DrawLatex(lin_gr.GetXaxis().GetXmin() + 10, 0.9*lin_gr.GetYaxis().GetXmax(), "#bf{ECAL} Test Beam 2021")
 ECALtex.SetTextSize(0.035)    
-ECALtex.DrawLatex(21, 0.85*lin_gr.GetYaxis().GetXmax(), 'ADCtoGeV = %.4f #pm %.4f'%(popt[0], perr[0]))
-ECALtex.DrawLatex(21, 0.80*lin_gr.GetYaxis().GetXmax(), 'offset = %.4f #pm %.4f'%(popt[1], perr[1]))
+ECALtex.DrawLatex(lin_gr.GetXaxis().GetXmin() + 10, 0.85*lin_gr.GetYaxis().GetXmax(), 'ADCtoGeV = (%.3f #pm %.3f) ADC/GeV'%(popt[0], perr[0]))
+ECALtex.DrawLatex(lin_gr.GetXaxis().GetXmin() + 10, 0.80*lin_gr.GetYaxis().GetXmax(), 'offset = (%.2f #pm %.2f) ADC'%(popt[1], perr[1]))
 c0.cd()
 ratio_pad = ROOT.TPad("ratio_pad", "",0., 0., 1.,0.30)
 ratio_pad.SetMargin(0.15,0.1,0.25,0.04)
@@ -165,18 +166,18 @@ y=array.array('d',unumpy.nominal_values(sigma_over_mean).tolist()[0])
 ey=array.array('d',unumpy.std_devs(sigma_over_mean).tolist()[0])
 
 # resolution fit
-def resol_func(x, N, S, C):
-    #N = 0.51 # fixed noise term (Simone)
+def resol_func(x, S, C):
+    N = 0.37 # fixed noise term 
     resol = N*N/(x*x) + S*S/x + C*C
     return np.sqrt(resol)
-popt, pcov = curve_fit(resol_func, energies_float, y, sigma=ey,absolute_sigma=True)
+popt, pcov = curve_fit(resol_func, energies_float, y, sigma=ey,absolute_sigma=True, bounds= ([0.001, 0.], [0.1, 0.01]))
 perr = np.sqrt(np.diag(pcov))
 print('fit parametes and 1-sigma errors:')
 for i in range(len(popt)):
     print('\t par[%d] = %.3f +- %.3f'%(i,popt[i],perr[i]))
 
-fit_resol = ROOT.TF1("resol_func", "sqrt([0]*[0]/(x*x) + [1]*[1]/x + [2]*[2])", 10, 300)
-fit_resol.SetParameter(0, popt[0]); fit_resol.SetParameter(1, popt[1]); fit_resol.SetParameter(2, popt[2]);
+fit_resol = ROOT.TF1("resol_func", "sqrt(0.37*0.37/(x*x) + [0]*[0]/x + [1]*[1])", 10, 300)
+fit_resol.SetParameter(0, popt[0]); fit_resol.SetParameter(1, popt[1]); 
 fit_resol.SetLineWidth(3)
 
 
@@ -188,15 +189,16 @@ gr.SetMarkerStyle(20)
 gr.SetTitle('')
 gr.GetYaxis().SetTitleSize(0.04)
 gr.GetYaxis().SetLabelSize(0.04)
-Ymin = 0.; Ymax = 0.05
+Ymin = 0.; Ymax = 0.035
 gr.GetYaxis().SetRangeUser(Ymin, Ymax)
+Xmin = 0.; Xmax = 300 
+gr.GetXaxis().SetLimits(Xmin, Xmax)
 #gr.GetYaxis().SetNdivisions(-510)
 gr.GetYaxis().SetTitleOffset(1.9)
 gr.GetYaxis().SetTitle( '#sigma(E)/E')
 gr.GetXaxis().SetTitleOffset(1.5)
 gr.GetXaxis().SetTitleSize(0.04)
 gr.GetXaxis().SetLabelSize(0.04)
-gr.GetXaxis().SetRangeUser(0., 300)
 gr.GetXaxis().SetTitle( 'E (GeV)' )
 gr.Draw( 'AP' )
 fit_resol.Draw('same')
@@ -216,11 +218,78 @@ fit_txt.SetTextAngle(0)
 fit_txt.SetTextColor(ROOT.kBlack)    
 fit_txt.SetTextSize(0.035)    
 fit_txt.SetTextAlign(12)
-fit_txt.DrawLatex(20, 0.014, 'N = %.4f #pm %.4f'%(popt[0], perr[0]))
-fit_txt.DrawLatex(20, 0.012, 'S = %.4f #pm %.4f'%(popt[1], perr[1]))
-fit_txt.DrawLatex(20, 0.010, 'C = %.4f #pm %.4f'%(popt[2], perr[2]))
+X_fit_txt = 0.45*gr.GetXaxis().GetXmax(); Y_fit_txt = 0.65*Ymax; dY_fit_txt = 0.002
+#fit_txt.DrawLatex(X_fit_txt, Y_fit_txt,             'N = %.4f #pm %.4f'%(popt[0], perr[0]))
+fit_txt.DrawLatex(X_fit_txt, Y_fit_txt,             'N = 0.34 GeV (fixed)')
+fit_txt.DrawLatex(X_fit_txt, Y_fit_txt-dY_fit_txt,  'S = (%.4f #pm %.4f) GeV^{1/2}'%(np.abs(popt[0]), perr[0]))
+fit_txt.DrawLatex(X_fit_txt, Y_fit_txt-2*dY_fit_txt,'C = (%.4f #pm %.4f)'%(popt[1], perr[1]))
 ECALtex.SetTextSize(0.045)
 ECALtex.DrawLatex(20,0.005, "#bf{ECAL} Test Beam 2021")
+
+
+## superimpose gain-switched points ##
+if (args.gain_compare):
+    input2 = './results/C3results_HP_'+ args.crystal +'_gain1.json'
+    print(' >> gain comparison input file : %s' %input2)
+    with open(input2, 'r') as openfile2:
+        # Reading from json file
+        Gresults= json.load(openfile2)
+
+    G_energies_float = []
+    G_CBmeans= []
+    G_CBmeans_err = []
+    G_CBsigma = []
+    G_CBsigma_err = []
+    G_sigma_over_mean_C2 = []
+    G_energies_float_unc = []
+    for item in Gresults:
+        #if (float)(list(item.keys())[0]) < 180 : continue
+        G_energies_float.append((float)(list(item.keys())[0]))
+        G_energies_float_unc.append((float)(list(item.keys())[0])*0.005)
+        G_CBmeans.append(item[list(item.keys())[0]]['CBmean'][0])
+        G_CBmeans_err.append(item[list(item.keys())[0]]['CBmean'][1])
+        G_CBsigma.append(item[list(item.keys())[0]]['CBsigma'][0])
+        G_CBsigma_err.append(item[list(item.keys())[0]]['CBsigma'][1])
+    
+    print(f' -> gain 1 : E [GeV] : {G_energies_float}')
+    
+    
+    Gmeans =  unumpy.umatrix(G_CBmeans, G_CBmeans_err)
+    Gsigmas =  unumpy.umatrix(G_CBsigma, G_CBsigma_err)
+    
+    Gsigma_over_mean = Gsigmas/Gmeans
+    
+    Ggr = ROOT.TGraphErrors(len(G_energies_float),array.array('d',G_energies_float),
+                            array.array('d',unumpy.nominal_values(Gsigma_over_mean).tolist()[0]),array.array('d',G_energies_float_unc) ,
+                            array.array('d',unumpy.std_devs(Gsigma_over_mean).tolist()[0]) )
+
+    # resolution curve
+    # resolution fit
+
+    y=array.array('d',unumpy.nominal_values(Gsigma_over_mean).tolist()[0])
+    ey=array.array('d',unumpy.std_devs(Gsigma_over_mean).tolist()[0])
+    def resol_func_G1(x, S, C):
+        N = 0.34*np.sqrt(10.14) # fixed noise term 
+        resol = N*N/(x*x) + S*S/x + C*C
+        return np.sqrt(resol)
+    Gpopt, Gpcov = curve_fit(resol_func_G1, G_energies_float, y, sigma=ey,absolute_sigma=True, bounds= ([0.00005, 0.005], [1., 0.006]))
+    Gperr = np.sqrt(np.diag(Gpcov))
+    print('G1 fit parametes and 1-sigma errors:')
+    for i in range(len(Gpopt)):
+        print('\t par[%d] = %.3f +- %.3f'%(i,Gpopt[i],Gperr[i]))
+
+    fit_resol_G1 = ROOT.TF1("resol_func_G1", "sqrt((1.08*1.08)/(x*x) + [0]*[0]/x + [1]*[1])", 10, 300)
+    fit_resol_G1.SetParameter(0, Gpopt[0]); fit_resol_G1.SetParameter(1, Gpopt[1]); #fit_resol_G1.SetParameter(2, Gpopt[2]); 
+    fit_resol_G1.SetLineWidth(3)
+    fit_resol_G1.SetLineColor(ROOT.kGray)
+
+
+    Ggr.SetMarkerStyle(20)
+    Ggr.SetMarkerColor(ROOT.kBlue)
+    leg.AddEntry(Ggr,f'ECAL {args.crystal} - gain = 1','P')
+    Ggr.Draw( 'P' )
+    fit_resol_G1.Draw('same')
+    
 
 c1.Draw()  
 ROOT.gStyle.SetLineWidth(2)

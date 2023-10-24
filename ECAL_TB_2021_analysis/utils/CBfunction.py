@@ -16,10 +16,12 @@ class CBfunction:
     fitchi_max =5000 
     gain = 1 
     nbins =600
-    window = 0.8 
+    window = 70 
+    containment = ''
     xmin = 0
     xmax = 12000
     xaxis_scale = 0.2
+    peak_scale = 0.05
     a_initial = 0.5
     a_min = 0.2
     a_max = 2.
@@ -57,10 +59,15 @@ class CBfunction:
         self.fitchi_max = ChiMAX
         
     def set_selection(self):
-        #self.selection = "fit_ampl[MCP1]>120 && fabs(X-(%.2f))<%.2f && fabs(Y-(%.2f))<%.2f"%(self.xcenter,self.window,self.ycenter,self.window)
-        #self.selection = f'trg==PHYS && fit_chi2[{self.crystal}] < {self.fitchi_max} && fit_ampl[MCP1]>200&& fabs(h1X.clusters.X_- {self.xcenter}) < {self.window} && fabs(h1Y.clusters.Y_- {self.ycenter})  < {self.window} && fabs(h1X.clusters.X_ - h2X.clusters.X_ - 1) < 1 && fabs(h1Y.clusters.Y_ - h2Y.clusters.Y_ + 1) < 1'
-        #self.selection = f'trg==PHYS && evt_flag && fit_ampl[MCP1]>200&& fabs(X - {self.xcenter}) < {self.window} && fabs(Y- {self.ycenter}) < {self.window}'
-        self.selection = f'trg==PHYS &&  fit_ampl[MCP1]>200 && (amp_max[{self.crystal}]/(amp_max[A1]+amp_max[A2]+amp_max[A3]+amp_max[A4]+amp_max[A5]+amp_max[B1]+amp_max[B2]+amp_max[B3]+amp_max[B4]+amp_max[B5]+amp_max[C1]+amp_max[C2]+amp_max[C3]+amp_max[C4]+amp_max[C5]+amp_max[D1]+amp_max[D2]+amp_max[D3]+amp_max[D4]+amp_max[D5]+amp_max[E1]+amp_max[E2]+amp_max[E3]+amp_max[E4]+amp_max[E5]))>{self.window} && gain[{self.crystal}] =={self.gain} && fit_chi2[{self.crystal}] < {self.fitchi_max}' 
+        if(self.crystal == 'C3' ):self.containment = "&&(amp_max[%s]*100/(amp_max[B2]+amp_max[B3]+amp_max[B4]+amp_max[C2]+amp_max[C3]+amp_max[C4]+amp_max[D2]+amp_max[D3]+amp_max[D4]))> % d "%(self.crystal, self.window)
+        if(self.crystal == 'C2' ):self.containment = "&&(amp_max[%s]*100/(amp_max[B1]+amp_max[B2]+amp_max[B3]+amp_max[C1]+amp_max[C2]+amp_max[C3]+amp_max[D1]+amp_max[D2]+amp_max[D3]))> % d "%(self.crystal, self.window)
+        #self.containment = "&&(amp_max[%s]*100/(amp_max[A1]+amp_max[A2]+amp_max[A3]+amp_max[A4]+amp_max[A5]+amp_max[B1]+amp_max[B2]+amp_max[B3]+amp_max[B4]+amp_max[B5]+amp_max[C1]+amp_max[C2]+amp_max[C3]+amp_max[C4]+amp_max[C5]+amp_max[D1]+amp_max[D2]+amp_max[D3]+amp_max[D4]+amp_max[D5]+amp_max[E1]+amp_max[E2]+amp_max[E3]+amp_max[E4]+amp_max[E5]))> %d"%(self.crystal, self.window)
+        self.selection = "trg==PHYS &&  fit_ampl[MCP1]>200 && gain[%s] == %d"%(self.crystal, self.gain) + self.containment
+        #self.selection = "trg==PHYS &&  fit_ampl[MCP1]>200" + self.containment 
+        #if not (self.maxAmplitude): self.selection += "&& fit_chi2[%s] < %d"%(self.crystal, self.fitchi_max) 
+        
+        #self.selection = f'trg==PHYS &&  fit_ampl[MCP1]>200 && (fabs(fit_ampl[{self.crystal}]-amp_max[{self.crystal}])/amp_max[{self.crystal}])<0.8' 
+
         print(f' --> selection : {self.selection}')
 
     def prepare_sumhistogram(self,dict_crystals_calibration,matrix):
@@ -144,8 +151,8 @@ class CBfunction:
         self.x = RooRealVar("signal_%s_%dGeV"%(self.crystal,round_energy),"signal_%s_%dGeV"%(self.crystal,round_energy),max(0.,self.peak_position*(1-self.xaxis_scale)),self.peak_position*(1+self.xaxis_scale))
 
         self.roohist = RooDataHist("roohist_fit_%s_%s"%(self.crystal,self.energy),"roohist_fit_%s_%s"%(self.crystal,self.energy),RooArgList(self.x),self.hist)
-        self.m = RooRealVar("mean_%s_%s"%(self.crystal,self.energy),"mean_%s_%s"%(self.crystal,self.energy),self.peak_position,max(0.,self.peak_position*(1-self.xaxis_scale)),self.peak_position*(1+self.xaxis_scale))
-        self.s = RooRealVar("sigma_%s_%s"%(self.crystal,self.energy),"sigma_%s_%s"%(self.crystal,self.energy),self.s_initial,0.002*self.peak_position,0.05*self.peak_position)
+        self.m = RooRealVar("mean_%s_%s"%(self.crystal,self.energy),"mean_%s_%s"%(self.crystal,self.energy),self.peak_position,max(0.,self.peak_position*(1-self.peak_scale)),self.peak_position*(1+self.peak_scale))
+        self.s = RooRealVar("sigma_%s_%s"%(self.crystal,self.energy),"sigma_%s_%s"%(self.crystal,self.energy),self.s_initial,0.0001*self.peak_position,0.05*self.peak_position)
         self.a = RooRealVar("alpha_%s_%s"%(self.crystal,self.energy),"alpha_%s_%s"%(self.crystal,self.energy),self.a_initial,self.a_min,self.a_max)
         self.a2 = RooRealVar("alpha2_%s_%s"%(self.crystal,self.energy),"alpha2_%s_%s"%(self.crystal,self.energy),self.a2_initial, self.a2_min, self.a2_max)
         self.n = RooRealVar("exp_%s_%s"%(self.crystal,self.energy),"exp_%s_%s"%(self.crystal,self.energy),self.n_initial, self.n_min,self.n_max)
@@ -177,13 +184,36 @@ class CBfunction:
         ndf = 4 
         self.chi2 = self.frame.chiSquare("signal_chi2_%s_%s"%(self.crystal,self.energy),"roohist_chi2_%s_%s"%(self.crystal,self.energy),ndf) # 4 = nFitParameters from CB
         self.sig.paramOn(self.frame,RooFit.Layout(0.70,0.99,0.8))
-        self.frame.getAttText().SetTextSize(0.02)
+        self.frame.getAttText().SetTextSize(0.03)
 
-        txt_chi2 = ROOT.TText(self.peak_position*0.5*self.xaxis_scale,self.ymax_value,"Chi2 = %.1f"%self.chi2)
+        txt_chi2 = ROOT.TText(self.peak_position*(1.- self.xaxis_scale),self.ymax_value,"Chi2 = %.1f"%self.chi2)
         txt_chi2.SetTextSize(0.04)
         txt_chi2.SetTextColor(ROOT.kRed)
         self.frame.addObject(txt_chi2)
         self.frame.Draw()
+
+    def plot_containment(self, plot_folder, outstr):
+        threshold = self.window 
+        h_cont = ROOT.TH1F("h_cont","h_cont_%s_%s"%(self.crystal,self.energy), 50, 0., 100.)  
+        h_cont_cut = ROOT.TH1F("h_cont_cut","h_cont_cut_%s_%s"%(self.crystal,self.energy), 50, 0., 100.)  
+        N = self.data.Draw("(amp_max[C3]*100/(amp_max[B2]+amp_max[B3]+amp_max[B4]+amp_max[C2]+amp_max[C3]+amp_max[C4]+amp_max[D2]+amp_max[D3]+amp_max[D4]))>>h_cont", "trg == PHYS && fit_ampl[MCP1]>200", "goff") 
+        self.data.Draw("(amp_max[C3]*100/(amp_max[B2]+amp_max[B3]+amp_max[B4]+amp_max[C2]+amp_max[C3]+amp_max[C4]+amp_max[D2]+amp_max[D3]+amp_max[D4]))>>h_cont_cut", "trg == PHYS && fit_ampl[MCP1]>200 && (amp_max[C3]*100/(amp_max[B2]+amp_max[B3]+amp_max[B4]+amp_max[C2]+amp_max[C3]+amp_max[C4]+amp_max[D2]+amp_max[D3]+amp_max[D4]))> %d"%(threshold), "goff") 
+
+        h_cont.Scale(1./N)
+        h_cont_cut.Scale(1./N)
+        h_cont.GetXaxis().SetTitle("A_{%s}/A_{3x3} "%(self.crystal))
+        h_cont.SetLineWidth(3);  h_cont.SetLineColor(ROOT.kOrange+1)
+        h_cont_cut.SetLineWidth(3); h_cont_cut.SetLineColor(ROOT.kOrange+1); h_cont_cut.SetFillColor(ROOT.kOrange+1); h_cont_cut.SetFillStyle(3003)
+
+        print(N)
+        cc = ROOT.TCanvas("cc","cc",800,800)
+        cc.cd()
+        h_cont.Draw("hist")
+        h_cont_cut.Draw("hist same")
+        ROOT.gPad.RedrawAxis()
+        cc.SaveAs('%s/C2_containment_%s.png'%(plot_folder,outstr))
+        cc.SaveAs('%s/C2_containment_%s.pdf'%(plot_folder,outstr))
+        #return cc 
 
     def plot_time(self):
         self.frame = self.x.frame()
