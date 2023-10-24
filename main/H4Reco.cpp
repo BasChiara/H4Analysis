@@ -274,6 +274,15 @@ int main(int argc, char* argv[])
 	//---events loop
 	while((dataLoader.NextEvent() && (nEvents < maxEvents || maxEvents == -1)) || (isSim && (nEvents < maxEvents)))
         {
+       bool time_aligned = true;
+       vector<int> VFE_ch = {1,3,5,7,9};
+       for(auto& ch : VFE_ch){   
+          //std::cout << "VFE channel " << ch << std::endl;
+          if((long long int)(dataLoader.GetTree().evtTime[0] - dataLoader.GetTree().evtTime[ch]) > 1500) time_aligned = false;
+          if((long long int)(dataLoader.GetTree().evtTime[0] - dataLoader.GetTree().evtTime[ch]) < 0.) time_aligned = false;
+       }
+       if(!time_aligned) continue;
+       if((long long int)(dataLoader.GetTree().evtTime[11] - dataLoader.GetTree().evtTime[0]) > 200.) continue;
 	    if(dataLoader.FirstEventInSpill())
             {
                 cout << "\033[1;36m" << ">>> Processed spills: " << dataLoader.GetNFilesProcessed() << "/" << dataLoader.GetNFiles() << endl;
@@ -304,12 +313,11 @@ int main(int argc, char* argv[])
             }
 
 	    //    cbasile: check if the time-stamps synchronization hold
-            int nDigitizers = (int)(dataLoader.GetTree().nEvtTimes/2); 
-            std::cout << " --> nDigitizers " << nDigitizers << std::endl; 
-            for(int iD=0; iD<nDigitizers; ++iD){
-                if(fabs((long long int)(dataLoader.GetTree().evtTime[2*iD+1] - dataLoader.GetTree().evtTime[0])) > 500.) status = false;   
-                //std::cout << "   digi " << 2*iD+1 << "\t" << (long long int)(dataLoader.GetTree().evtTime[2*iD+1] - dataLoader.GetTree().evtTime[0] )<< std::endl;   
-            }
+            //int nDigitizers = (int)(dataLoader.GetTree().nEvtTimes/2); 
+            //std::cout << " --> nDigitizers " << nDigitizers << std::endl; 
+            //for(int iD=0; iD<nDigitizers; ++iD){
+            //    if(fabs((long long int)(dataLoader.GetTree().evtTime[2*iD+1] - dataLoader.GetTree().evtTime[0])) > 500.) status = false;   
+            //}
         
 	    //---Fill the main tree with info variables and increase event counter
             mainTree.time_stamps.clear();
