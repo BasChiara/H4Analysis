@@ -133,7 +133,6 @@ bool DigitizerReco::ProcessEvent(H4Tree& event, map<string, PluginBase*>& plugin
             iSample++;
         }
 
-        std::cout << " Dopo loop sui samples " << channel << std::endl;
         if(opts.OptExist(channel+".useTrigRef") && opts.GetOpt<bool>(channel+".useTrigRef"))
             WFs_[channel]->SetTrigRef(trigRef);
         if(WFs_[channel]->GetCalibration())
