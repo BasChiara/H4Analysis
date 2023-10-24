@@ -231,8 +231,8 @@ void WFClassLiTeDTU::Reset()
     tmplFitTimeSpike_ = -1;
     tmplFitAmpSpike_ = -1;
     tmplFitConverged_ = false;
-    interpolatorMin_=-1;
-    interpolatorMax_=-1;
+    //interpolatorMin_=-1;
+    //interpolatorMax_=-1;
     uncalibSamples_.clear();
     calibSamples_.clear();
     gain_.clear();

@@ -310,8 +310,9 @@ void WFClassClock::SetTemplate(TH1* templateWF)
         delete interpolator_;
 
     interpolator_ = new ROOT::Math::Interpolator(0, ROOT::Math::Interpolation::kCSPLINE);
-    tmplFitTime_ = templateWF->GetBinCenter(templateWF->GetMaximumBin());
-    tmplFitAmp_ = -1;
+    //tmplFitTime_ = templateWF->GetBinCenter(templateWF->GetMaximumBin());
+    tmplFitTime_ = 0; 
+    tmplFitAmp_  = -1;
 
     //---fill interpolator data
     vector<double> x, y;
@@ -340,7 +341,7 @@ double WFClassClock::TemplateChi2(const double* par)
                 )
 
         {
-            cout << ">>>WARNING: template fit out of samples rage (chi2 set to 9999)" << endl;
+            //cout << ">>>WARNING: template fit out of samples rage (chi2 set to 9999)" << endl;
             //cout << "iSample " << iSample << endl;
             //cout << "polarity " << polarity_<< endl;
             //cout << " interpolatorMin_ "<< interpolatorMin_<< endl;
