@@ -279,10 +279,10 @@ int main(int argc, char* argv[])
        for(auto& ch : VFE_ch){   
           //std::cout << "VFE channel " << ch << std::endl;
           if((long long int)(dataLoader.GetTree().evtTime[0] - dataLoader.GetTree().evtTime[ch]) > 1500) time_aligned = false;
-          if((long long int)(dataLoader.GetTree().evtTime[0] - dataLoader.GetTree().evtTime[ch]) < 0.) time_aligned = false;
+          if((long long int)(dataLoader.GetTree().evtTime[0] - dataLoader.GetTree().evtTime[ch]) <  200) time_aligned = false;
        }
+       if((long long int)(dataLoader.GetTree().evtTime[11] - dataLoader.GetTree().evtTime[0]) > 200.) time_aligned = false;
        if(!time_aligned) continue;
-       if((long long int)(dataLoader.GetTree().evtTime[11] - dataLoader.GetTree().evtTime[0]) > 200.) continue;
 	    if(dataLoader.FirstEventInSpill())
             {
                 cout << "\033[1;36m" << ">>> Processed spills: " << dataLoader.GetNFilesProcessed() << "/" << dataLoader.GetNFiles() << endl;
