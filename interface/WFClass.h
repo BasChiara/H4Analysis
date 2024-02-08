@@ -164,7 +164,7 @@ public:
     virtual void                           AddSample(float sample, float gain) {AddSample(sample);};
     WFBaseline                             SubtractBaseline(int min=-1, int max=-1);
     WFBaseline                             SubtractBaseline(float baseline);
-    virtual WFBaseline                             SubtractBaselineFit(int min=-1, int max=-1) {};
+    virtual WFBaseline                     SubtractBaselineFit(int min=-1, int max=-1) {return WFBaseline{0, 0, 0, 0, 999};};
 				           
     virtual WFFitResults                   TemplateFit(float amp_threshold=0., float offset=0., int lW=0, int hW=0);
 				           
